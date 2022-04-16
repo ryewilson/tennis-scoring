@@ -1,2 +1,6 @@
 # tennis-scoring
-Score a tennis match!
+Program created to help score a tennis match!
+
+Contains features such as
+- No Ad scoring
+- Only singles!
