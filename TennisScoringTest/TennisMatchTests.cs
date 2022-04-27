@@ -185,15 +185,58 @@ public class TennisMatchTests
         // Score the point to win the game
         _ = match.ScorePoint(p1);
         // Score first point in next game by OTHER player
+        _ = match.ScorePoint(p2);
+        _ = match.ScorePoint(p2);
+        _ = match.ScorePoint(p2);
         MatchScore score = match.ScorePoint(p2);
         
-        Assert.IsTrue(score.IsWinning(p1));
+        Assert.IsFalse(score.IsWinning(p1));
         // Scores swap because server switched
-        Assert.AreEqual("15-0", score.GetGameScore()); 
-        Assert.AreEqual("0-1", score.GetSetScore());
+        Assert.AreEqual("0-0", score.GetGameScore()); 
+        Assert.AreEqual("1-1", score.GetSetScore());
     } 
 
     // Winning a set
+    [TestMethod]
+    public void PlayerWinsSet_CorrectScore()
+    {
+        (var match, Player p1, Player p2) = GetTestMatch();
+
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 1 game
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 2 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 3 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 4 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 5 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        var score = match.ScorePoint(p1); // Win 6 games
+        
+        Assert.IsTrue(score.IsWinning(p1));
+        // Scores swap because server switched
+        Assert.AreEqual("0-0", score.GetGameScore()); 
+        Assert.AreEqual("0-0", score.GetSetScore());
+        Assert.AreEqual("1-0", score.GetMatchScore());
+
+    } 
+
+
     // Winning a match
+    // Preserve the history of the score from the entire match
     // Ad scoring
 }

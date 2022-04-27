@@ -25,8 +25,8 @@ public class MatchScore
     public string GetGameScore()
     {
         var serverScore = _scores[CurrentServer];
-        var otherScore = GetOppositePlayer(CurrentServer).Value;
-        string score = $"{serverScore.GetRealGamePoints()}-{otherScore.GetRealGamePoints()}";
+        var receiverScore = GetOppositePlayer(CurrentServer).Value;
+        string score = $"{serverScore.GetRealGamePoints()}-{receiverScore.GetRealGamePoints()}";
 
         if(score.Equals(ScoreConstants.FortyForty))
         {
@@ -39,78 +39,102 @@ public class MatchScore
     public string GetSetScore()
     {
         var serverScore = _scores[CurrentServer];
-        var otherScore = GetOppositePlayer(CurrentServer).Value;
-        string score = $"{serverScore.Sets}-{otherScore.Sets}";
+        var receiverScore = GetOppositePlayer(CurrentServer).Value;
+        string score = $"{serverScore.Games}-{receiverScore.Games}";
+
+        return score;
+    }
+
+    public string GetMatchScore()
+    {
+        var serverScore = _scores[CurrentServer];
+        var receiverScore = GetOppositePlayer(CurrentServer).Value;
+        string score = $"{serverScore.Sets}-{receiverScore.Sets}";
 
         return score;
     }
 
     public bool IsWinning(Player player)
     {
-        TeamScore winningScore = GetLargerScore(_scores[player], GetOppositePlayer(player).Value);
+        TeamScore winningScore = TeamScore.GetLargerScore(_scores[player], GetOppositePlayer(player).Value);
         return winningScore.Player.Equals(player);
-    }
-
-    private TeamScore GetLargerScore(TeamScore firstScore, TeamScore secondScore)
-    {
-        if (firstScore.Sets > secondScore.Sets)
-        {
-            return firstScore;
-        }
-        else if (firstScore.Sets < secondScore.Sets)
-        {
-            return secondScore;
-        }
-        // Else sets are equal, so continue checking
-
-        if (firstScore.Games > secondScore.Games)
-        {
-            return firstScore;
-        }
-        else if (secondScore.Games > firstScore.Games)
-        {
-            return secondScore;
-        }
-        //Else games are equal, continue checking
-
-        if (firstScore.GamePoints > secondScore.GamePoints)
-        {
-            return firstScore;
-        }
-        else if (secondScore.GamePoints > firstScore.GamePoints)
-        {
-            return secondScore;
-        }
-
-        return new TeamScore(Player.None);
     }
 
     public MatchScore AddPoint(Player scoringPlayer)
     {
         var score = _scores[scoringPlayer];
-
-        if(score.GamePoints + 1 > ScoreConstants.MaxGameScore)
+        if (GameHasBeenWonByPointEnding(score))
         {
-            return PlayerWinsGame(scoringPlayer, score);
+            return GetNewScoreAfterGameEnds(scoringPlayer, score);
         }
         else
         {
-            // Basic case where an additional point is added to the current game and that is all
-            TeamScore newScore = score with { GamePoints = score.GamePoints + 1 };
-            return With(scoringPlayer, newScore);
+            return PointIsScoredInCurrentGame(scoringPlayer, score);
         }
     }
 
-    private MatchScore PlayerWinsGame(Player scoringPlayer, TeamScore score)
+    private MatchScore GetNewScoreAfterGameEnds(Player scoringPlayer, TeamScore? score)
+    {
+        (TeamScore scoringPlayerScore, TeamScore otherScore) = PlayerWinsGame(scoringPlayer, score);
+
+        if (SetHasBeenWonByGameEnding(scoringPlayerScore))
+        {
+            (scoringPlayerScore, otherScore) = PlayerWinsSet(scoringPlayer, score, otherScore);
+        }
+
+        return With(scoringPlayer, scoringPlayerScore,
+            GetNonScoringPlayer(scoringPlayer), otherScore,
+            GetNextServer());
+    }
+
+    private MatchScore PointIsScoredInCurrentGame(Player scoringPlayer, TeamScore? score)
+    {
+        TeamScore newScore = score with { GamePoints = score.GamePoints + 1 };
+        return With(scoringPlayer, newScore);
+    }
+
+    private static bool SetHasBeenWonByGameEnding(TeamScore scoringPlayerScore)
+    {
+        return scoringPlayerScore.Games > ScoreConstants.MaxGamesInSet;
+    }
+
+    private static bool GameHasBeenWonByPointEnding(TeamScore score)
+    {
+        return score.GamePoints + 1 > ScoreConstants.MaxGameScore;
+    }
+
+    private Player GetNextServer()
+    {
+        return GetOppositePlayer(CurrentServer).Key;
+    }
+
+        private Player GetNonScoringPlayer(Player scoringPlayer)
+    {
+        return GetOppositePlayer(scoringPlayer).Key;
+    }
+
+    private (TeamScore scoringPlayerScore, TeamScore otherScore) PlayerWinsGame(Player scoringPlayer, TeamScore score)
     {
         // The game has been won and the set ticks up
-        TeamScore scoringPlayerScore = score with { GamePoints = 0, Sets = score.Sets + 1 };
+        TeamScore scoringPlayerScore = score with 
+        {   GamePoints = 0, 
+            Games = score.Games + 1 };
         TeamScore otherScore = GetOppositePlayer(scoringPlayer).Value with { GamePoints = 0 };
 
-        var nextServer = GetOppositePlayer(CurrentServer).Key;
-        return With(scoringPlayer, scoringPlayerScore, 
-            GetOppositePlayer(scoringPlayer).Key, otherScore,
-            nextServer);
+        return (scoringPlayerScore, otherScore);
+    }
+    
+    private (TeamScore scoringPlayerScore, TeamScore otherScore) PlayerWinsSet(Player scoringPlayer, TeamScore score, TeamScore otherScore)
+    {
+        TeamScore scoringPlayerScore = score with 
+        {   GamePoints = 0, 
+            Games = 0, 
+            Sets = score.Sets + 1 };
+        TeamScore newOtherScore = otherScore with 
+        {   GamePoints = 0, 
+            Games = 0 };
+
+        return (scoringPlayerScore, newOtherScore);
     }
 
     private MatchScore With(Player p, TeamScore teamScore)

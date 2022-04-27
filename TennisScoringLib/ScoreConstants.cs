@@ -11,4 +11,5 @@ public class ScoreConstants
     public const string Deuce = "Deuce";
 
     public const uint MaxGameScore = 3;
+    public const uint MaxGamesInSet = 5;
 }
