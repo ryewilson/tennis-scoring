@@ -3,8 +3,17 @@ namespace TennisScoringLib;
 public class MatchScore
 {
     private Dictionary<Player, TeamScore> _scores = new Dictionary<Player, TeamScore>();
+    private Player matchWinner = Player.None;
 
     public Player CurrentServer { get; private set; }
+
+    public bool MatchIsOver
+    {
+        get
+        {
+            return matchWinner != Player.None;
+        }
+    }
 
     public MatchScore(Player p1, Player p2)
     {
@@ -14,12 +23,13 @@ public class MatchScore
         CurrentServer = p1;
     }
 
-    private MatchScore(Player p1, TeamScore t1, Player p2, TeamScore t2, Player currentServer)
+    private MatchScore(Player p1, TeamScore t1, Player p2, TeamScore t2, Player currentServer, Player winner)
     {
         _scores.Add(p1, t1);
         _scores.Add(p2, t2);
 
         CurrentServer = currentServer;
+        matchWinner = winner;
     }
 
     public string GetGameScore()
@@ -60,8 +70,18 @@ public class MatchScore
         return winningScore.Player.Equals(player);
     }
 
+    public Player GetMatchWinner()
+    {
+        return matchWinner;
+    }
+
     public MatchScore AddPoint(Player scoringPlayer)
     {
+        if(MatchIsOver)
+        {
+            throw new MatchOverException();
+        }
+
         var score = _scores[scoringPlayer];
         if (GameHasBeenWonByPointEnding(score))
         {
@@ -82,9 +102,18 @@ public class MatchScore
             (scoringPlayerScore, otherScore) = PlayerWinsSet(scoringPlayer, score, otherScore);
         }
 
+        Player nextServer = GetNextServer();
+        // When a set ends, it's possible the match may have ended
+        // Best out of 5 sets
+        if(scoringPlayerScore.Sets > 2)
+        {
+            matchWinner = scoringPlayer;
+            nextServer = matchWinner; // The winner must have their score reported first
+        }
+
         return With(scoringPlayer, scoringPlayerScore,
             GetNonScoringPlayer(scoringPlayer), otherScore,
-            GetNextServer());
+            nextServer, matchWinner);
     }
 
     private MatchScore PointIsScoredInCurrentGame(Player scoringPlayer, TeamScore? score)
@@ -140,15 +169,16 @@ public class MatchScore
     private MatchScore With(Player p, TeamScore teamScore)
     {
         var otherPlayer = GetOppositePlayer(p);
-        return new MatchScore(p, teamScore, otherPlayer.Key, otherPlayer.Value, CurrentServer);
+        return new MatchScore(p, teamScore, otherPlayer.Key, otherPlayer.Value, CurrentServer, matchWinner);
     }
 
     private MatchScore With(Player scoringPlayer, TeamScore scoringPlayerScore, 
         Player otherPlayer, TeamScore otherScore, 
-        Player server)
+        Player server, 
+        Player winner)
     {
         
-        return new MatchScore(scoringPlayer, scoringPlayerScore, otherPlayer, otherScore, server);
+        return new MatchScore(scoringPlayer, scoringPlayerScore, otherPlayer, otherScore, server, winner);
     }
 
     private KeyValuePair<Player, TeamScore> GetOppositePlayer(Player p)

@@ -17,6 +17,37 @@ public class TennisMatchTests
         return (match, p1, p2);
     }
 
+        private MatchScore GetScoreWithPlayerWinSet(TennisMatch match, Player p1)
+    {
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 1 game
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 2 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 3 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 4 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1); // Win 5 games
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        _ = match.ScorePoint(p1);
+        MatchScore score = match.ScorePoint(p1);
+        // Win 6 games
+
+        return score;
+    }
+
     [TestMethod]
     public void CreateMatch_success()
     {
@@ -191,7 +222,6 @@ public class TennisMatchTests
         MatchScore score = match.ScorePoint(p2);
         
         Assert.IsFalse(score.IsWinning(p1));
-        // Scores swap because server switched
         Assert.AreEqual("0-0", score.GetGameScore()); 
         Assert.AreEqual("1-1", score.GetSetScore());
     } 
@@ -200,43 +230,49 @@ public class TennisMatchTests
     [TestMethod]
     public void PlayerWinsSet_CorrectScore()
     {
-        (var match, Player p1, Player p2) = GetTestMatch();
+        (TennisMatch match, Player p1, Player p2) = GetTestMatch();
+        MatchScore score = GetScoreWithPlayerWinSet(match, p1);
 
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1); // Win 1 game
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1); // Win 2 games
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1); // Win 3 games
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1); // Win 4 games
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1); // Win 5 games
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        _ = match.ScorePoint(p1);
-        var score = match.ScorePoint(p1); // Win 6 games
-        
         Assert.IsTrue(score.IsWinning(p1));
         // Scores swap because server switched
-        Assert.AreEqual("0-0", score.GetGameScore()); 
+        Assert.AreEqual("0-0", score.GetGameScore());
         Assert.AreEqual("0-0", score.GetSetScore());
         Assert.AreEqual("1-0", score.GetMatchScore());
+    }
 
-    } 
+    // Splitting two sets
+    [TestMethod]
+    public void PlayersSplitSets_CorrectScore()
+    {
+        (TennisMatch match, Player p1, Player p2) = GetTestMatch();
+        MatchScore setOneScore = GetScoreWithPlayerWinSet(match, p1);
+        MatchScore setTwoScore = GetScoreWithPlayerWinSet(match, p2);
+
+        Assert.IsFalse(setTwoScore.IsWinning(p1));
+        // Scores swap because server switched
+        Assert.AreEqual("0-0", setTwoScore.GetGameScore());
+        Assert.AreEqual("0-0", setTwoScore.GetSetScore());
+        Assert.AreEqual("1-1", setTwoScore.GetMatchScore());
+    }
+
+    [TestMethod]
+    public void PlayerOneWinsMatch_MatchEnds()
+    {
+        (TennisMatch match, Player p1, Player p2) = GetTestMatch();
+        _ = GetScoreWithPlayerWinSet(match, p1);
+        _ = GetScoreWithPlayerWinSet(match, p2);
+        _ = GetScoreWithPlayerWinSet(match, p1);
+        MatchScore finalScore = GetScoreWithPlayerWinSet(match, p1);
 
 
-    // Winning a match
+        Assert.IsTrue(finalScore.IsWinning(p1));
+        Assert.AreEqual("0-0", finalScore.GetGameScore());
+        Assert.AreEqual("0-0", finalScore.GetSetScore());
+        Assert.AreEqual("3-1", finalScore.GetMatchScore());
+        Assert.IsTrue(finalScore.MatchIsOver);
+        Assert.AreEqual(p1, finalScore.GetMatchWinner());
+    }
+
     // Preserve the history of the score from the entire match
     // Ad scoring
 }
