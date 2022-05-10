@@ -82,7 +82,7 @@ public class MatchScore
             throw new MatchOverException();
         }
 
-        var score = _scores[scoringPlayer];
+        TeamScore score = _scores[scoringPlayer];
         if (GameHasBeenWonByPointEnding(score))
         {
             return GetNewScoreAfterGameEnds(scoringPlayer, score);
@@ -93,7 +93,7 @@ public class MatchScore
         }
     }
 
-    private MatchScore GetNewScoreAfterGameEnds(Player scoringPlayer, TeamScore? score)
+    private MatchScore GetNewScoreAfterGameEnds(Player scoringPlayer, TeamScore score)
     {
         (TeamScore scoringPlayerScore, TeamScore otherScore) = PlayerWinsGame(scoringPlayer, score);
 
@@ -116,7 +116,7 @@ public class MatchScore
             nextServer, matchWinner);
     }
 
-    private MatchScore PointIsScoredInCurrentGame(Player scoringPlayer, TeamScore? score)
+    private MatchScore PointIsScoredInCurrentGame(Player scoringPlayer, TeamScore score)
     {
         TeamScore newScore = score with { GamePoints = score.GamePoints + 1 };
         return With(scoringPlayer, newScore);
